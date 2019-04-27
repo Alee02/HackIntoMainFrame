@@ -1,12 +1,17 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class Hacker : MonoBehaviour
 {
+
     int level;
     State gameState;
     string username;
+    int category;
+    int gameTimer;
+    Boolean isWinner = false;
 
     enum State
     {
@@ -14,7 +19,8 @@ public class Hacker : MonoBehaviour
         Menu,
         Category,
         Game,
-        Idle
+        Won,
+        Lost
     }
 
     // Start is called before the first frame update
@@ -62,13 +68,36 @@ public class Hacker : MonoBehaviour
         Terminal.WriteLine("Press 2 for Main Frame");
     }
 
-    void StartGame()
+    string CreateAnagram(string word)
     {
-        Terminal.ClearScreen();
-        Terminal.WriteLine("You have chosen level " + level);
+        if (word.Length > 0)
+        {
+            char[] charArray = word.ToLower().ToCharArray();
+            for (int t = 0; t < charArray.Length; t++)
+            {
+                char temp = charArray[t];
+                int r = UnityEngine.Random.Range(t, charArray.Length);
+                charArray[t] = charArray[r];
+                charArray[r] = temp;
+            }
+            return string.Join("", charArray);
+        }
+        else
+        {
+            throw new ArgumentException("Word needs to have a lenght of more than 1");
+        }
     }
 
-    void showCategoryScreen()
+    void StartGame(string secretWord)
+    {
+        gameState = State.Game;
+        Terminal.ClearScreen();
+        Terminal.WriteLine("Top Secret Documents");
+        Terminal.WriteLine("Codeword: " + secretWord);
+        Terminal.WriteLine("Enter password to download");
+    }
+
+    void ShowCategoryScreen()
     {
         gameState = State.Category;
         Terminal.ClearScreen();
@@ -79,22 +108,16 @@ public class Hacker : MonoBehaviour
 
     void OnUserInput(string input)
     {
-        print("Enter was pressed");
         print(gameState);
         if (gameState == State.Login)
         {
             // Login Screen
-            print("Login screen");
             if (input.Length > 0)
             {
                 print("User input");
                 print("We in login state and setting stuff");
                 username = input;
                 showMainMenu(username);
-            }
-            else
-            {
-                print("User input none");
             }
         }
         else if (gameState == State.Menu)
@@ -105,22 +128,38 @@ public class Hacker : MonoBehaviour
                 if (int.TryParse(input, out x))
                 {
                     level = x;
-                    showCategoryScreen();
+                    ShowCategoryScreen();
                 }
             }
         } else if (gameState == State.Category)
         {
             if (input.Length > 0)
             {
-                StartGame();
-            } else
-            {
-
+                string secretWord = CreateAnagram("mainframe");
+                StartGame(secretWord);
             }
         }
-        else
+        else if (gameState == State.Game){
+           if(input == "mainframe")
+            {
+                Terminal.WriteLine("You hacked into the mainframe");
+                isWinner = true;
+                gameState = State.Won;
+            } else
+            {
+                Terminal.WriteLine("Oh no, the cops caught you!");
+                gameState = State.Lost;
+                
+            }
+        }
+        else if (gameState == State.Won)
         {
-            print("Idk what happend");
+            gameState = State.Menu;
+        } else if (gameState == State.Lost)
+        {
+            string secretWord = CreateAnagram("Astrnaut");
+            Terminal.WriteLine("You can't type from a jail cell");
+            StartGame(secretWord);
         }
     }
 }
